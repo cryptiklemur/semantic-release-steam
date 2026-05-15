@@ -12,6 +12,7 @@ export async function verifyConditions(pluginConfig, context) {
     branchTargets: pluginConfig.branchTargets,
     mods: pluginConfig.mods,
     steamConfigPath: context.env.STEAM_CONFIG_VDF,
+    appId: pluginConfig.appId,
   });
 }
 
@@ -22,6 +23,7 @@ export async function publish(pluginConfig, context) {
     branchTargets: pluginConfig.branchTargets,
     mods: pluginConfig.mods,
     steamConfigPath: context.env.STEAM_CONFIG_VDF,
+    appId: pluginConfig.appId,
   });
 
   if (!state.shouldPublish) {
@@ -43,6 +45,7 @@ export async function publish(pluginConfig, context) {
       modPath,
       header: pluginConfig.descriptionHeader ?? '',
       footer: pluginConfig.descriptionFooter ?? '',
+      assetDirNameTransform: pluginConfig.assetDirNameTransform,
     });
     const stagePath = await stageContent({ modPath });
     const description = await buildDescription({
@@ -54,6 +57,7 @@ export async function publish(pluginConfig, context) {
       steamCmdPath: context.env.STEAMCMD_PATH ?? '~/steamcmd/steamcmd.sh',
       steamUsername: context.env.STEAM_USERNAME,
       steamConfigPath: context.env.STEAM_CONFIG_VDF,
+      appId: pluginConfig.appId,
       stagePath,
       publishedFileId: mod.workshopIds[state.target],
       changenote: context.nextRelease.notes || context.nextRelease.version,

@@ -5,18 +5,18 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { writeCompiledReadme } from '../lib/readme.mjs';
 
-const zwsp = '\u200B';
+const zwsp = '​';
 
-test('writeCompiledReadme composes header template and footer with zero-width-space separators', async () => {
+test('writeCompiledReadme composes header template and footer with zero-width-space separators using default transform', async () => {
   const rootPath = mkdtempSync(join(tmpdir(), 'readme-compile-'));
-  const modPath = join(rootPath, 'CosmereScadrial');
+  const modPath = join(rootPath, 'MyMod');
 
-  mkdirSync(join(rootPath, '.github', 'assets', 'scadrial'), { recursive: true });
+  mkdirSync(join(rootPath, '.github', 'assets', 'mymod'), { recursive: true });
   mkdirSync(modPath, { recursive: true });
 
-  writeFileSync(join(modPath, 'README.template.md'), '\uFEFF![About](../.github/assets/scadrial/about.png)\nBody\n');
-  writeFileSync(join(rootPath, '.github', 'assets', 'scadrial', 'intro.png'), '');
-  writeFileSync(join(rootPath, '.github', 'assets', 'scadrial', 'support_us.png'), '');
+  writeFileSync(join(modPath, 'README.template.md'), '﻿![About](../.github/assets/mymod/about.png)\nBody\n');
+  writeFileSync(join(rootPath, '.github', 'assets', 'mymod', 'intro.png'), '');
+  writeFileSync(join(rootPath, '.github', 'assets', 'mymod', 'support_us.png'), '');
 
   await writeCompiledReadme({
     modPath,
@@ -26,7 +26,29 @@ test('writeCompiledReadme composes header template and footer with zero-width-sp
 
   assert.equal(
     readFileSync(join(modPath, 'README.md'), 'utf8'),
-    `![Introduction](../.github/assets/scadrial/intro.png)\n${zwsp}\n\n![About](../.github/assets/scadrial/about.png)\nBody\n\n${zwsp}\n\n![Support](../.github/assets/scadrial/support_us.png)`,
+    `![Introduction](../.github/assets/mymod/intro.png)\n${zwsp}\n\n![About](../.github/assets/mymod/about.png)\nBody\n\n${zwsp}\n\n![Support](../.github/assets/mymod/support_us.png)`,
   );
 });
 
+test('writeCompiledReadme honors a custom assetDirNameTransform', async () => {
+  const rootPath = mkdtempSync(join(tmpdir(), 'readme-compile-'));
+  const modPath = join(rootPath, 'CosmereScadrial');
+
+  mkdirSync(join(rootPath, '.github', 'assets', 'scadrial'), { recursive: true });
+  mkdirSync(modPath, { recursive: true });
+
+  writeFileSync(join(modPath, 'README.template.md'), 'Body\n');
+  writeFileSync(join(rootPath, '.github', 'assets', 'scadrial', 'intro.png'), '');
+
+  const transform = mp => [mp.split('/').pop().replace(/^Cosmere/, '').toLowerCase(), 'fallback'];
+
+  await writeCompiledReadme({
+    modPath,
+    header: '![Intro](../.github/assets/fallback/intro.png)',
+    footer: '',
+    assetDirNameTransform: transform,
+  });
+
+  const compiled = readFileSync(join(modPath, 'README.md'), 'utf8');
+  assert.match(compiled, /\.\/\.github\/assets\/scadrial\/intro\.png|\.\.\/\.github\/assets\/scadrial\/intro\.png/);
+});

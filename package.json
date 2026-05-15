@@ -1,0 +1,56 @@
+{
+  "name": "semantic-release-steam",
+  "version": "0.0.0-development",
+  "description": "semantic-release plugin that publishes a Steam Workshop item from a built mod directory.",
+  "type": "module",
+  "main": "index.mjs",
+  "exports": {
+    ".": "./index.mjs",
+    "./lib/*": "./lib/*"
+  },
+  "files": [
+    "index.mjs",
+    "lib/",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "test:check-config": "node tests/run-config-check.mjs"
+  },
+  "keywords": [
+    "semantic-release",
+    "semantic-release-plugin",
+    "steam",
+    "steam-workshop",
+    "steamcmd",
+    "release",
+    "publish"
+  ],
+  "author": "Aaron Scherer <aequasi@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CryptikLemur/semantic-release-steam.git"
+  },
+  "bugs": {
+    "url": "https://github.com/CryptikLemur/semantic-release-steam/issues"
+  },
+  "homepage": "https://github.com/CryptikLemur/semantic-release-steam#readme",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "peerDependencies": {
+    "semantic-release": ">=20.0.0"
+  },
+  "peerDependenciesMeta": {
+    "semantic-release": {
+      "optional": false
+    }
+  },
+  "devDependencies": {
+    "semantic-release": "^24.0.0",
+    "@semantic-release/exec": "^7.0.0",
+    "@semantic-release/git": "^10.0.0"
+  }
+}

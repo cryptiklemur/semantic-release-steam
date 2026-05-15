@@ -13,6 +13,7 @@ test('uploadWorkshopItem passes steam config path, captures stdout, and sets tim
     steamCmdPath: '/tmp/steamcmd.sh',
     steamUsername: 'steam-user',
     steamConfigPath: '/tmp/config.vdf',
+    appId: '294100',
     stagePath,
     publishedFileId: '123456',
     changenote: '2.0.0-beta.3',
@@ -37,6 +38,24 @@ test('uploadWorkshopItem passes steam config path, captures stdout, and sets tim
   assert.equal(calls[0].options.env.STEAM_CONFIG_VDF, '/tmp/config.vdf');
 });
 
+test('uploadWorkshopItem throws when appId is missing', async () => {
+  const stagePath = mkdtempSync(join(tmpdir(), 'steamcmd-stage-'));
+
+  await assert.rejects(
+    uploadWorkshopItem({
+      steamCmdPath: '/tmp/steamcmd.sh',
+      steamUsername: 'builder',
+      steamConfigPath: '/tmp/config.vdf',
+      stagePath,
+      publishedFileId: '123456',
+      changenote: '1.0.0',
+      description: 'd',
+      execFileAsync: async () => ({ stdout: '', stderr: '' }),
+    }),
+    /appId is required/
+  );
+});
+
 test('uploadWorkshopItem includes stdout and stderr in timeout errors', async () => {
   const stagePath = mkdtempSync(join(tmpdir(), 'steamcmd-stage-'));
 
@@ -45,6 +64,7 @@ test('uploadWorkshopItem includes stdout and stderr in timeout errors', async ()
       steamCmdPath: '/tmp/steamcmd.sh',
       steamUsername: 'builder',
       steamConfigPath: '/tmp/config.vdf',
+      appId: '294100',
       stagePath,
       publishedFileId: '123456',
       changenote: '2.0.0-beta.3',

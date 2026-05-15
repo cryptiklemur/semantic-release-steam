@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { stageModContent } from '../lib/stage-content.mjs';
 
 test('stages mod content while excluding .steamignore matches', async () => {
   const root = mkdtempSync(join(tmpdir(), 'steam-stage-'));
-  const modDir = join(root, 'CosmereCore');
+  const modDir = join(root, 'MyMod');
   mkdirSync(join(modDir, 'About'), { recursive: true });
   writeFileSync(join(modDir, 'About', 'About.xml'), '<ModMetaData />');
   writeFileSync(join(modDir, '.steamignore'), 'Secrets.txt\n');
@@ -20,9 +20,15 @@ test('stages mod content while excluding .steamignore matches', async () => {
   assert.equal(existsSync(join(stagedPath, 'Secrets.txt')), false);
 });
 
-test('roshar steamignore keeps CombatExtended compatibility patches publishable', () => {
-  const ignorePath = new URL('../../../CosmereRoshar/.steamignore', import.meta.url).pathname;
-  const ignoreEntries = readFileSync(ignorePath, 'utf8').split(/\r?\n/).filter(Boolean);
+test('stages mod content even without a .steamignore', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'steam-stage-'));
+  const modDir = join(root, 'BareMod');
+  mkdirSync(join(modDir, 'About'), { recursive: true });
+  writeFileSync(join(modDir, 'About', 'About.xml'), '<ModMetaData />');
+  writeFileSync(join(modDir, 'Keep.txt'), 'keep me');
 
-  assert.equal(ignoreEntries.includes('CombatExtended'), false);
+  const stagedPath = await stageModContent({ modPath: modDir });
+
+  assert.equal(existsSync(join(stagedPath, 'About', 'About.xml')), true);
+  assert.equal(existsSync(join(stagedPath, 'Keep.txt')), true);
 });

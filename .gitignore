@@ -1,0 +1,16 @@
+node_modules/
+.idea/
+.vscode/
+.DS_Store
+*.log
+npm-debug.log*
+.env
+.env.local
+coverage/
+.nyc_output/
+.agent-browser/
+
+# Override global gitignore for project-tracked .claude rules
+!.claude/
+!.claude/**
+.claude/settings.local.json

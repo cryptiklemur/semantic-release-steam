@@ -2,11 +2,10 @@ import plugin from '../index.mjs';
 
 await plugin.verifyConditions(
   {
+    appId: process.env.STEAM_APP_ID ?? '294100',
     branchTargets: { main: 'stable', beta: 'beta' },
     mods: [
-      { name: 'CosmereCore', path: 'CosmereCore', workshopIds: { stable: process.env.COSMERE_CORE_STABLE, beta: process.env.COSMERE_CORE_BETA } },
-      { name: 'CosmereScadrial', path: 'CosmereScadrial', workshopIds: { stable: process.env.COSMERE_SCADRIAL_STABLE, beta: process.env.COSMERE_SCADRIAL_BETA } },
-      { name: 'CosmereRoshar', path: 'CosmereRoshar', workshopIds: { stable: process.env.COSMERE_ROSHAR_STABLE, beta: process.env.COSMERE_ROSHAR_BETA } },
+      { name: 'ExampleMod', path: '.', workshopIds: { stable: process.env.EXAMPLE_STABLE, beta: process.env.EXAMPLE_BETA } },
     ],
   },
   {
