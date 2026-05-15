@@ -35,12 +35,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/CryptikLemur/semantic-release-steam.git"
+    "url": "git+https://github.com/cryptiklemur/semantic-release-steam.git"
   },
   "bugs": {
-    "url": "https://github.com/CryptikLemur/semantic-release-steam/issues"
+    "url": "https://github.com/cryptiklemur/semantic-release-steam/issues"
   },
-  "homepage": "https://github.com/CryptikLemur/semantic-release-steam#readme",
+  "homepage": "https://github.com/cryptiklemur/semantic-release-steam#readme",
   "engines": {
     "node": ">=20.0.0"
   },
