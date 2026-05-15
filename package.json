@@ -14,6 +14,10 @@
     "LICENSE",
     "README.md"
   ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "scripts": {
     "test": "node --test tests/*.test.mjs",
     "test:check-config": "node tests/run-config-check.mjs"
