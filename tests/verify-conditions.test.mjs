@@ -2,91 +2,134 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { verifySteamPublishConfig } from '../lib/config.mjs';
 
-test('returns no publishable mods when beta branch lacks beta workshop id', async () => {
-  const result = await verifySteamPublishConfig({
-    env: { STEAM_USERNAME: 'builder' },
-    branchName: 'beta',
-    branchTargets: { main: 'stable', beta: 'beta' },
-    mods: [{ name: 'MyMod', path: 'MyMod', workshopIds: { stable: '1' } }],
-    steamConfigPath: '/tmp/config.vdf',
-    appId: '294100',
-  });
+const baseEnv = () => ({
+  STEAM_USERNAME: 'builder',
+  STEAM_CONFIG_VDF: '/tmp/config.vdf',
+});
 
-  assert.deepEqual(result, { shouldPublish: false, target: 'beta', mods: [] });
+test('throws when no mod has a workshop id for the resolved target', async () => {
+  await assert.rejects(
+    () => verifySteamPublishConfig({
+      env: baseEnv(),
+      branchName: 'beta',
+      branchTargets: { main: 'stable', beta: 'beta' },
+      mods: [{ name: 'MyMod', path: 'MyMod', workshopIds: { stable: '1' } }],
+      appId: '294100',
+    }),
+    /No mods are publishable for target "beta"/,
+  );
 });
 
 test('returns no target for unsupported branch', async () => {
   const result = await verifySteamPublishConfig({
-    env: { STEAM_USERNAME: 'builder' },
+    env: baseEnv(),
     branchName: 'alpha',
     branchTargets: { main: 'stable', beta: 'beta' },
     mods: [],
-    steamConfigPath: '/tmp/config.vdf',
     appId: '294100',
   });
 
-  assert.deepEqual(result, { shouldPublish: false, target: null, mods: [] });
+  assert.deepEqual(result, { shouldPublish: false, target: null, mods: [], steamConfigPath: null });
 });
 
 test('throws when appId is missing', async () => {
   await assert.rejects(
     () => verifySteamPublishConfig({
-      env: { STEAM_USERNAME: 'builder' },
+      env: baseEnv(),
       branchName: 'main',
       branchTargets: { main: 'stable' },
       mods: [{ name: 'MyMod', path: 'MyMod', workshopIds: { stable: '1' } }],
-      steamConfigPath: '/tmp/config.vdf',
     }),
-    /appId is required/
+    /appId is required/,
   );
 });
 
 test('throws when STEAM_USERNAME is missing', async () => {
   await assert.rejects(
     () => verifySteamPublishConfig({
-      env: {},
+      env: { STEAM_CONFIG_VDF: '/tmp/config.vdf' },
       branchName: 'main',
       branchTargets: { main: 'stable' },
       mods: [{ name: 'MyMod', path: 'MyMod', workshopIds: { stable: '1' } }],
-      steamConfigPath: '/tmp/config.vdf',
       appId: '294100',
     }),
-    /STEAM_USERNAME is required/
+    /STEAM_USERNAME is required/,
   );
 });
 
-test('throws when steamConfigPath is missing', async () => {
+test('throws with both env var names when neither STEAM_CONFIG_VDF nor _B64 is set', async () => {
   await assert.rejects(
     () => verifySteamPublishConfig({
       env: { STEAM_USERNAME: 'builder' },
       branchName: 'main',
       branchTargets: { main: 'stable' },
       mods: [{ name: 'MyMod', path: 'MyMod', workshopIds: { stable: '1' } }],
-      steamConfigPath: '',
       appId: '294100',
     }),
-    /config\.vdf path is required/
+    /STEAM_CONFIG_VDF.*STEAM_CONFIG_VDF_B64/s,
   );
 });
 
-test('skips mods missing workshop id for the current target', async () => {
+test('throws when a mod has empty workshopIds', async () => {
+  await assert.rejects(
+    () => verifySteamPublishConfig({
+      env: baseEnv(),
+      branchName: 'main',
+      branchTargets: { main: 'stable', beta: 'beta' },
+      mods: [
+        { name: 'ModOne', path: 'ModOne', workshopIds: { stable: '1' } },
+        { name: 'ModTwo', path: 'ModTwo', workshopIds: {} },
+      ],
+      appId: '294100',
+    }),
+    /Mod "ModTwo" has no workshopIds set/,
+  );
+});
+
+test('throws with did-you-mean when the target key looks misspelled', async () => {
+  await assert.rejects(
+    () => verifySteamPublishConfig({
+      env: baseEnv(),
+      branchName: 'main',
+      branchTargets: { main: 'stable' },
+      mods: [{ name: 'MyMod', path: 'MyMod', workshopIds: { stabel: '1' } }],
+      appId: '294100',
+    }),
+    /Did you mean "stabel"/,
+  );
+});
+
+test('returns publishable mods when all configured correctly', async () => {
   const result = await verifySteamPublishConfig({
-    env: { STEAM_USERNAME: 'builder' },
+    env: baseEnv(),
     branchName: 'main',
     branchTargets: { main: 'stable', beta: 'beta' },
     mods: [
       { name: 'ModOne', path: 'ModOne', workshopIds: { stable: '1' } },
-      { name: 'ModTwo', path: 'ModTwo', workshopIds: {} },
+      { name: 'ModTwo', path: 'ModTwo', workshopIds: { stable: '2', beta: '3' } },
     ],
-    steamConfigPath: '/tmp/config.vdf',
     appId: '294100',
   });
 
-  assert.deepEqual(result, {
-    shouldPublish: true,
-    target: 'stable',
+  assert.equal(result.shouldPublish, true);
+  assert.equal(result.target, 'stable');
+  assert.equal(result.mods.length, 2);
+  assert.equal(result.steamConfigPath, '/tmp/config.vdf');
+});
+
+test('skips mod missing target key when other mods have it (and no close match)', async () => {
+  const result = await verifySteamPublishConfig({
+    env: baseEnv(),
+    branchName: 'main',
+    branchTargets: { main: 'stable', beta: 'beta' },
     mods: [
       { name: 'ModOne', path: 'ModOne', workshopIds: { stable: '1' } },
+      { name: 'ModTwo', path: 'ModTwo', workshopIds: { beta: '2' } },
     ],
+    appId: '294100',
   });
+
+  assert.equal(result.shouldPublish, true);
+  assert.equal(result.mods.length, 1);
+  assert.equal(result.mods[0].name, 'ModOne');
 });

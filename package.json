@@ -4,13 +4,20 @@
   "description": "semantic-release plugin that publishes a Steam Workshop item from a built mod directory.",
   "type": "module",
   "main": "index.mjs",
+  "types": "./index.d.ts",
   "exports": {
-    ".": "./index.mjs",
-    "./lib/*": "./lib/*"
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.mjs"
+    },
+    "./lib/*": "./lib/*",
+    "./schema/plugin-config.json": "./schema/plugin-config.json"
   },
   "files": [
     "index.mjs",
+    "index.d.ts",
     "lib/",
+    "schema/",
     "LICENSE",
     "README.md"
   ],
@@ -20,7 +27,9 @@
   },
   "scripts": {
     "test": "node --test tests/*.test.mjs",
-    "test:check-config": "node tests/run-config-check.mjs"
+    "test:check-config": "node tests/run-config-check.mjs",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [
     "semantic-release",
@@ -52,8 +61,16 @@
       "optional": false
     }
   },
+  "dependencies": {
+    "@steamdown/core": "^1.0.0-beta.2"
+  },
   "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@types/node": "^20.0.0",
+    "eslint": "^9.0.0",
+    "globals": "^15.0.0",
     "semantic-release": "^25.0.0",
-    "@semantic-release/git": "^10.0.0"
+    "@semantic-release/git": "^10.0.0",
+    "typescript": "^5.5.0"
   }
 }

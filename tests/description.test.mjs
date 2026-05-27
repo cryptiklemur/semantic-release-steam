@@ -1,10 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { chmodSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { buildSteamDescription } from '../lib/description.mjs';
-import { writeCompiledReadme } from '../lib/readme.mjs';
+import { buildSteamDescription, renderSteamBBCode } from '../lib/description.mjs';
 
 test('returns fallback description when README is missing', async () => {
   const fixturePath = new URL('./fixtures/mod', import.meta.url).pathname;
@@ -12,76 +11,37 @@ test('returns fallback description when README is missing', async () => {
   assert.equal(description, 'No description available.');
 });
 
-test('buildSteamDescription renders README images with steamdown img tags', async () => {
-  const rootPath = mkdtempSync(join(tmpdir(), 'steam-description-'));
-  const modPath = join(rootPath, 'MyMod');
-  const binPath = join(rootPath, 'bin');
-  const originalPath = process.env.PATH;
-
-  mkdirSync(modPath, { recursive: true });
-  mkdirSync(binPath, { recursive: true });
-
-  writeFileSync(join(modPath, 'README.md'), '![Introduction](../.github/assets/mymod/intro.png)\n\nBody\n');
-  writeFileSync(
-    join(binPath, 'steamdown'),
-    "#!/usr/bin/env node\nprocess.stdout.write('[img]https://example.com/.github/assets/mymod/intro.png[/img]\\n\\nBody\\n');\n",
-  );
-  chmodSync(join(binPath, 'steamdown'), 0o755);
-
-  process.env.PATH = `${binPath}:${originalPath}`;
-
-  try {
-    const description = await buildSteamDescription({
-      modPath,
-      assetBaseUrl: 'https://example.com',
-    });
-    assert.equal(
-      description,
-      '[img]https://example.com/.github/assets/mymod/intro.png[/img]\n\nBody\n',
-    );
-  } finally {
-    process.env.PATH = originalPath;
-  }
+test('renderSteamBBCode converts headings, bold, links, images to BBCode', () => {
+  const md = '# Hello\n\nThis is **bold** with a [link](https://example.com).\n\n![alt](https://example.com/img.png)';
+  const out = renderSteamBBCode(md);
+  assert.match(out, /\[h1\]Hello\[\/h1\]/);
+  assert.match(out, /\[b\]bold\[\/b\]/);
+  assert.match(out, /\[url=https:\/\/example\.com\]link\[\/url\]/);
+  assert.match(out, /\[img\]https:\/\/example\.com\/img\.png\[\/img\]/);
 });
 
-test('buildSteamDescription keeps an image after a zero-width-space separator', async () => {
-  const rootPath = mkdtempSync(join(tmpdir(), 'steam-description-boundary-'));
-  const modPath = join(rootPath, 'MyMod');
-  const binPath = join(rootPath, 'bin');
-  const originalPath = process.env.PATH;
+test('renderSteamBBCode returns fallback on empty input', () => {
+  assert.equal(renderSteamBBCode(''), 'No description available.');
+  assert.equal(renderSteamBBCode('   \n  '), 'No description available.');
+});
 
-  mkdirSync(join(rootPath, '.github', 'assets', 'mymod'), { recursive: true });
+test('buildSteamDescription accepts markdown directly and rewrites asset links', async () => {
+  const description = await buildSteamDescription({
+    modPath: '/nonexistent',
+    markdown: '![intro](../.github/assets/mymod/intro.png)',
+    assetBaseUrl: 'https://example.com',
+  });
+
+  assert.match(description, /\[img\]https:\/\/example\.com\/\.github\/assets\/mymod\/intro\.png\[\/img\]/);
+});
+
+test('buildSteamDescription reads from README.md when markdown is not passed', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'steam-desc-'));
+  const modPath = join(root, 'MyMod');
   mkdirSync(modPath, { recursive: true });
-  mkdirSync(binPath, { recursive: true });
+  writeFileSync(join(modPath, 'README.md'), '# Title\n\nBody.');
 
-  writeFileSync(join(modPath, 'README.template.md'), '![About](../.github/assets/mymod/about.png)\n');
-  writeFileSync(join(rootPath, '.github', 'assets', 'mymod', 'intro.png'), '');
-  writeFileSync(join(rootPath, '.github', 'assets', 'mymod', 'about.png'), '');
-  writeFileSync(
-    join(binPath, 'steamdown'),
-    "#!/usr/bin/env node\nlet input='';process.stdin.on('data',chunk=>input+=chunk);process.stdin.on('end',()=>{if(input.includes('\\n​\\n\\n![About](')){process.stdout.write('[img]https://example.com/.github/assets/mymod/intro.png[/img]\\n​\\n\\n[img]https://example.com/.github/assets/mymod/about.png[/img]\\n');return;}process.stdout.write('[img]https://example.com/.github/assets/mymod/intro.png[/img]\\n​\\n![url=https://example.com/.github/assets/mymod/about.png]About[/url]\\n');});\n",
-  );
-  chmodSync(join(binPath, 'steamdown'), 0o755);
-
-  process.env.PATH = `${binPath}:${originalPath}`;
-
-  try {
-    await writeCompiledReadme({
-      modPath,
-      header: '![Introduction](../.github/assets/fallback/intro.png)',
-      footer: '',
-    });
-
-    const description = await buildSteamDescription({
-      modPath,
-      assetBaseUrl: 'https://example.com',
-    });
-
-    assert.equal(
-      description,
-      '[img]https://example.com/.github/assets/mymod/intro.png[/img]\n​\n\n[img]https://example.com/.github/assets/mymod/about.png[/img]\n',
-    );
-  } finally {
-    process.env.PATH = originalPath;
-  }
+  const out = await buildSteamDescription({ modPath });
+  assert.match(out, /\[h1\]Title\[\/h1\]/);
+  assert.match(out, /Body/);
 });
