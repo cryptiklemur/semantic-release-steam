@@ -20,6 +20,26 @@ test('stages mod content while excluding .steamignore matches', async () => {
   assert.equal(existsSync(join(stagedPath, 'Secrets.txt')), false);
 });
 
+test('supports gitignore-style negation patterns in .steamignore', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'steam-stage-'));
+  const modDir = join(root, 'NegMod');
+  mkdirSync(join(modDir, '.run'), { recursive: true });
+  writeFileSync(join(modDir, '.run', 'config.xml'), '<Config />');
+  writeFileSync(join(modDir, 'Keep.txt'), 'keep me');
+  writeFileSync(join(modDir, 'Other.txt'), 'skip me');
+  writeFileSync(
+    join(modDir, '.steamignore'),
+    '# comment\n.run/\n*.txt\n!.run/\n!Keep.txt\n',
+  );
+
+  const stagedPath = await stageModContent({ modPath: modDir });
+
+  assert.equal(existsSync(join(stagedPath, '.run', 'config.xml')), true);
+  assert.equal(existsSync(join(stagedPath, 'Keep.txt')), true);
+  assert.equal(existsSync(join(stagedPath, 'Other.txt')), false);
+  assert.equal(existsSync(join(stagedPath, '.steamignore')), false);
+});
+
 test('stages mod content even without a .steamignore', async () => {
   const root = mkdtempSync(join(tmpdir(), 'steam-stage-'));
   const modDir = join(root, 'BareMod');

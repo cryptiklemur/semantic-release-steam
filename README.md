@@ -196,9 +196,13 @@ After that, every push to `main` / `beta` will trigger an update via this plugin
 
 ## Example `.steamignore`
 
-Place at the root of each mod's `path` to exclude files from the upload. Patterns are passed to `rsync --exclude-from`.
+Place at the root of each mod's `path` to exclude files from the upload. Patterns use rsync exclude syntax, plus gitignore-style `!` negation to re-include something a broader pattern would exclude. Later patterns win over earlier ones (gitignore semantics), so put negations after the patterns they override.
 
 ```
+# Keep .run/ even though dotfiles below are excluded
+.*
+!.run/
+
 # Source control
 .git
 .gitignore
