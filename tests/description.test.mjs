@@ -25,6 +25,20 @@ test('renderSteamBBCode returns fallback on empty input', () => {
   assert.equal(renderSteamBBCode('   \n  '), 'No description available.');
 });
 
+test('renderSteamBBCode wraps a fenced code block that carries a language tag', () => {
+  const md = '```csharp\nclass Foo { void Bar() {} }\n```';
+  const out = renderSteamBBCode(md);
+  assert.match(out, /\[code\]\nclass Foo \{ void Bar\(\) \{\} \}\n\[\/code\]/);
+  assert.doesNotMatch(out, /```/);
+  assert.doesNotMatch(out, /\[noparse\]/);
+});
+
+test('renderSteamBBCode leaves a bare fenced code block intact', () => {
+  const md = '```\nplain code\n```';
+  const out = renderSteamBBCode(md);
+  assert.match(out, /\[code\]\nplain code\n\[\/code\]/);
+});
+
 test('buildSteamDescription accepts markdown directly and rewrites asset links', async () => {
   const description = await buildSteamDescription({
     modPath: '/nonexistent',
