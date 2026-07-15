@@ -1,6 +1,6 @@
 {
   "name": "semantic-release-steam",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "semantic-release plugin that publishes a Steam Workshop item from a built mod directory.",
   "type": "module",
   "main": "index.mjs",
