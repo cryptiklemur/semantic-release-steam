@@ -18,7 +18,7 @@ test('renders workshop.vdf with required fields and changenote+description', () 
   assert.match(vdf, /"description" "Steam description"/);
 });
 
-test('escapes quotes in changenote and description', () => {
+test('converts quotes to curly quotes so steam does not truncate the value', () => {
   const vdf = createWorkshopVdf({
     appId: '294100',
     publishedFileId: '123456',
@@ -27,8 +27,9 @@ test('escapes quotes in changenote and description', () => {
     description: 'desc "quoted"',
   });
 
-  assert.match(vdf, /note \\"quoted\\"/);
-  assert.match(vdf, /desc \\"quoted\\"/);
+  assert.match(vdf, /note “quoted”/);
+  assert.match(vdf, /desc “quoted”/);
+  assert.doesNotMatch(vdf, /\\"/);
 });
 
 test('omits optional fields when not set', () => {
