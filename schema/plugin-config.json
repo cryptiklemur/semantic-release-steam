@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/cryptiklemur/semantic-release-steam/schema/plugin-config.json",
+  "$id": "https://github.com/RimWorks/semantic-release-steam/schema/plugin-config.json",
   "title": "semantic-release-steam plugin config",
   "description": "Configuration for the semantic-release-steam plugin.",
   "type": "object",
